@@ -1,11 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
-import Prelude hiding (FilePath)
-import Data.List (lookup)
 import Data.Monoid ((<>))
-import qualified Data.ByteString as B
 import Turtle
 import qualified Data.Text as T
-import Filesystem.Path.CurrentOS hiding (empty, null)
 import Database.SQLite.Simple
 import Options.Applicative
 import Shared
