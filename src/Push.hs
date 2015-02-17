@@ -6,6 +6,7 @@ import Network.Wreq
 import Data.Aeson
 import Data.Aeson.Lens
 import Control.Lens
+import Control.Monad.Reader
 import qualified Data.ByteString.Lazy as BS
 import qualified Data.Text as T
 import qualified Data.Text.IO as TIO
@@ -19,19 +20,21 @@ data Config = Config { _issueUser :: T.Text
                      , _repo      :: T.Text
                      } deriving (Show, Eq)
 
+type ConfigM = ReaderT (Connection, Config) IO
+
 cfgPath :: IsString a => a
 cfgPath = ".git/hooks/gitdo.json"
 
-createIssue :: Config -> Todo -> IO ()
-createIssue cfg (Todo fp ln td _) = undefined
+createIssue :: Todo -> ConfigM ()
+createIssue (Todo fp ln td _) = undefined
 
-updateIssue :: Config -> Todo -> IO ()
+updateIssue :: Todo -> ConfigM ()
 updateIssue = undefined
 
-createOrUpdate :: Config -> Todo -> IO ()
-createOrUpdate cfg t@(Todo _ _ _ s)
-  | s == "new" = createIssue cfg t
-  | s == "updated" = updateIssue cfg t
+createOrUpdate :: Todo -> ConfigM ()
+createOrUpdate t@(Todo _ _ _ s)
+  | s == "new" = createIssue t
+  | s == "updated" = updateIssue t
 
 parseConfig :: Maybe Value -> Maybe Config
 parseConfig cfg =
@@ -43,11 +46,10 @@ parseConfig cfg =
 push :: IO ()
 push = do
   cfgTxt <- BS.readFile cfgPath
-  BS.putStrLn cfgTxt
   case decode cfgTxt >>= parseConfig of
     Just cfg -> do
       conn <- open dbPath
       todos <- query conn "SELECT * FROM todos" ()
-      mapM_ (createOrUpdate cfg) todos
+      flip runReaderT (conn, cfg) $ mapM_ createOrUpdate todos
     Nothing -> die ("Make sure " <> cfgPath
                     <> " is valid json and has the required fields")
