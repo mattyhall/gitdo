@@ -11,6 +11,9 @@ import Database.SQLite.Simple
 import Database.SQLite.Simple.ToField
 import Options.Applicative
 
+dbPath :: String
+dbPath = ".git/hooks/todos.db"
+
 data Todo = Todo { _file :: FilePath
                  , _line :: Int
                  , _todo :: T.Text
@@ -85,7 +88,7 @@ updateTodo conn (Todo fp ln td _) (Todo _ _ _ status )= do
 updateDatabase :: Shell Todo -> Shell ()
 updateDatabase todos = do
   todo@(Todo fp ln td _) <- todos
-  conn <- liftIO $ open ".todos.db"
+  conn <- liftIO $ open dbPath
   qs <- liftIO $ query conn "SELECT * FROM todos WHERE todo=?" (Only td) :: Shell [Todo]
   if null qs
     then insertTodo conn todo
@@ -93,7 +96,7 @@ updateDatabase todos = do
 
 createTable :: IO ()
 createTable = do
-  conn <- liftIO $ open ".todos.db"
+  conn <- liftIO $ open dbPath
   execute conn "CREATE TABLE todos (file TEXT, line INT, todo TEXT, status TEXT);" ()
 
 data Command = AddHooks
