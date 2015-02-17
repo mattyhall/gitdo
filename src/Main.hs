@@ -6,6 +6,7 @@ import Data.Monoid ((<>))
 import qualified Data.ByteString as B
 import Turtle
 import qualified Data.Text as T
+import qualified Data.Text.IO as TIO
 import Filesystem.Path.CurrentOS hiding (empty, null)
 import Database.SQLite.Simple
 import Database.SQLite.Simple.ToField
@@ -72,17 +73,25 @@ handleFile file = do
       return (Todo file n v "")
     Nothing  -> liftIO (die $ unknownProgrammingLanguage file)
 
+todoMsg :: T.Text -> Todo -> T.Text
+todoMsg msg (Todo fp ln td _) = "[" <> msg <> "] " <>
+                                fromRight (toText fp) <>
+                                ":" <> T.pack (show ln) <>
+                                " " <> td
+
 insertTodo :: Connection -> Todo -> Shell ()
-insertTodo conn (Todo fp ln td _) = do
+insertTodo conn t@(Todo fp ln td _) = do
   let q = "INSERT INTO todos (file, line, todo, status) VALUES (?, ?, ?, ?)"
+  liftIO (TIO.putStrLn $ todoMsg "NEW" t)
   liftIO $ execute conn q (fp, ln, td, "new" :: T.Text)
 
 updateTodo :: Connection -> Todo -> Todo -> Shell ()
-updateTodo conn (Todo fp ln td _) (Todo _ _ _ status )= do
+updateTodo conn t@(Todo fp ln td _) (Todo _ _ _ status )= do
   let s = if status == "new"
             then "new"
             else "updated"
   let q = "UPDATE todos SET file=?, line=?, status=? WHERE todo=?"
+  liftIO (TIO.putStrLn $ todoMsg "UPDATE" t)
   liftIO $ execute conn q (fp, ln, status, td)
 
 updateDatabase :: Shell Todo -> Shell ()
