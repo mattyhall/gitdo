@@ -46,4 +46,5 @@ run (Reset) = do
   putStrLn "Deleted new todos"
 
 main  :: IO ()
-main = execParser (info (helper <*> opts) $ progDesc "Todo comments to issues") >>= run
+main = execParser (info (helper <*> opts) $ progDesc "Todo comments to issues")
+       >>= run

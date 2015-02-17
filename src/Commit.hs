@@ -62,7 +62,7 @@ insertTodo conn t@(Todo fp ln td _) = do
   liftIO $ execute conn q (fp, ln, td, "new" :: T.Text)
 
 updateTodo :: Connection -> Todo -> Todo -> Shell ()
-updateTodo conn t@(Todo fp ln td _) (Todo _ _ _ status )= do
+updateTodo conn t@(Todo fp ln td _) (Todo _ _ _ status) = do
   let s = if status == "new"
             then "new"
             else "updated"
