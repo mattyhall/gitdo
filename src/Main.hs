@@ -18,6 +18,7 @@ createTable = do
 
 data Command = AddHooks
              | Commit
+             | Reset
              deriving (Show, Eq)
 
 opts :: Parser Command
@@ -29,6 +30,10 @@ opts = subparser $
   command "commit"
           (info (helper <*> pure Commit)
             (progDesc "Commit hook. Adds todos to database"))
+  <>
+  command "reset"
+          (info (helper <*> pure Reset)
+            (progDesc "Delete new todos"))
 
 run :: Command -> IO ()
 run (AddHooks) = do
@@ -39,6 +44,10 @@ run (AddHooks) = do
   putStrLn "Created database"
 
 run (Commit) = commit
+run (Reset) = do
+  conn <- open dbPath
+  execute conn "DELETE FROM todos WHERE status=?" (Only "new" :: Only String)
+  putStrLn "Deleted new todos"
 
 main  :: IO ()
 main = execParser (info (helper <*> opts) $ progDesc "Todo comments to issues") >>= run
