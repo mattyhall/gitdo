@@ -63,7 +63,7 @@ updateTodo conn t@(Todo fp ln td _ _) (Todo _ _ _ status _) = do
             else Updated
   let q = "UPDATE todos SET file=?, line=?, status=? WHERE todo=?"
   liftIO (TIO.putStrLn $ todoMsg "UPDATE" t)
-  liftIO $ execute conn q (fp, ln, status, td)
+  liftIO $ execute conn q (fp, ln, s, td)
 
 updateDatabase :: Connection -> Shell Todo -> Shell ()
 updateDatabase conn todos = do
@@ -81,9 +81,8 @@ updateMissingTodos conn todos fp = do
   flip mapM_ (filter (`notElem` todos') records) $ \t@(Todo fp ln td _ _) -> do
     liftIO (TIO.putStrLn $ todoMsg "DELETE" t)
     liftIO $ execute conn
-                     ("UPDATE todos SET status=? WHERE" <>
-                      " file=? AND line=? AND TODO=?")
-                     (Deleted, fp, ln, td)
+                     "UPDATE todos SET status=? WHERE file=? AND todo=?"
+                     (Deleted, fp, td)
 
 commit :: IO ()
 commit = output "/dev/null" $ do
