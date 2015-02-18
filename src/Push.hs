@@ -60,5 +60,7 @@ syncIssue t@(Todo fp ln td _ n) = do
 push :: PushOpts -> IO ()
 push cfg = do
   conn <- open dbPath
-  todos <- query conn "SELECT * FROM todos" ()
+  todos <- query conn "SELECT * FROM todos WHERE status IN (?, ?)"
+                      ("new" :: T.Text, "updated" :: T.Text)
+  putStrLn "Done"
   flip runReaderT (conn, cfg) $ mapM_ syncIssue todos
