@@ -18,6 +18,7 @@ data Todo = Todo { _file :: FilePath
                  , _line :: Int
                  , _todo :: T.Text
                  , _status :: T.Text
+                 , _number :: Maybe Int
                  } deriving (Show, Eq)
 
 instance ToField FilePath where
@@ -25,6 +26,7 @@ instance ToField FilePath where
 
 instance FromRow Todo where
   fromRow = Todo <$> (fromText <$> field)
+                 <*> field
                  <*> field
                  <*> field
                  <*> field

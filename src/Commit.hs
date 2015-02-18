@@ -46,23 +46,23 @@ handleFile file = do
   case pat of
     Just pat -> do
       (n, v) <- matchWithLineNumber pat (input file)
-      return (Todo file n v "")
+      return (Todo file n v "" Nothing)
     Nothing  -> liftIO (die $ unknownProgrammingLanguage file)
 
 todoMsg :: T.Text -> Todo -> T.Text
-todoMsg msg (Todo fp ln td _) = "[" <> msg <> "] " <>
-                                fromRight (toText fp) <>
-                                ":" <> T.pack (show ln) <>
-                                " " <> td
+todoMsg msg (Todo fp ln td _ _) = "[" <> msg <> "] " <>
+                                   fromRight (toText fp) <>
+                                   ":" <> T.pack (show ln) <>
+                                   " " <> td
 
 insertTodo :: Connection -> Todo -> Shell ()
-insertTodo conn t@(Todo fp ln td _) = do
+insertTodo conn t@(Todo fp ln td _ _) = do
   let q = "INSERT INTO todos (file, line, todo, status) VALUES (?, ?, ?, ?)"
   liftIO (TIO.putStrLn $ todoMsg "NEW" t)
   liftIO $ execute conn q (fp, ln, td, "new" :: T.Text)
 
 updateTodo :: Connection -> Todo -> Todo -> Shell ()
-updateTodo conn t@(Todo fp ln td _) (Todo _ _ _ status) = do
+updateTodo conn t@(Todo fp ln td _ _) (Todo _ _ _ status _) = do
   let s = if status == "new"
             then "new"
             else "updated"
@@ -72,7 +72,7 @@ updateTodo conn t@(Todo fp ln td _) (Todo _ _ _ status) = do
 
 updateDatabase :: Shell Todo -> Shell ()
 updateDatabase todos = do
-  todo@(Todo fp ln td _) <- todos
+  todo@(Todo fp ln td _ _) <- todos
   conn <- liftIO $ open dbPath
   qs <- liftIO $ query conn "SELECT * FROM todos WHERE todo=?" (Only td) :: Shell [Todo]
   if null qs

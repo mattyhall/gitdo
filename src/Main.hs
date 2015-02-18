@@ -10,7 +10,8 @@ import Commit
 createTable :: IO ()
 createTable = do
   conn <- liftIO $ open dbPath
-  execute conn "CREATE TABLE todos (file TEXT, line INT, todo TEXT, status TEXT);" ()
+  execute conn ("CREATE TABLE todos " <>
+    "(file TEXT, line INT, todo TEXT, status TEXT, number INT);") ()
 
 data Command = AddHooks
              | Commit
