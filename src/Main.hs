@@ -17,8 +17,34 @@ createTable = do
 data Command = AddHooks
              | Commit
              | Reset
-             | Push
+             | Push PushOpts
              deriving (Show, Eq)
+
+txtOption :: Mod OptionFields String -> Parser T.Text
+txtOption opts = T.pack <$> strOption opts
+
+pushOpts :: Parser Command
+pushOpts = Push <$>
+  (PushOpts <$> txtOption
+                 (  long "iuser"
+                 <> short 'i'
+                 <> metavar "ISSUE_USER"
+                 <> help "User that will create the issue")
+           <*> txtOption
+                 (  long "password"
+                 <> short 'p'
+                 <> metavar "ISSUE_PSWD"
+                 <> help "Password of ISSUE_USER")
+           <*> txtOption
+                 (  long "user"
+                 <> short 'u'
+                 <> metavar "USER"
+                 <> help "The user who owns the repo")
+           <*> txtOption
+                 (  long "repo"
+                 <> short 'r'
+                 <> metavar "REPO"
+                 <> help "The repo to create the issues in"))
 
 opts :: Parser Command
 opts = subparser $
@@ -35,7 +61,7 @@ opts = subparser $
             (progDesc "Delete new todos"))
   <>
   command "push"
-          (info (helper <*> pure Push)
+          (info (helper <*> pushOpts)
             (progDesc "Create/update issues on github"))
 
 run :: Command -> IO ()
@@ -47,7 +73,7 @@ run (AddHooks) = do
   putStrLn "Created database"
 
 run (Commit) = commit
-run (Push) = push
+run (Push opts) = push opts
 run (Reset) = do
   conn <- open dbPath
   execute conn "DELETE FROM todos WHERE status=?" (Only "new" :: Only String)
