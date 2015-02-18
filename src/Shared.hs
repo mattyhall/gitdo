@@ -2,6 +2,7 @@
 module Shared where
 
 import Prelude hiding (FilePath)
+import Data.Monoid ((<>))
 import Control.Applicative
 import Database.SQLite.Simple
 import Database.SQLite.Simple.ToField
@@ -30,3 +31,9 @@ instance FromRow Todo where
                  <*> field
                  <*> field
                  <*> field
+
+todoMsg :: T.Text -> Todo -> T.Text
+todoMsg msg (Todo fp ln td _ _) = "[" <> msg <> "] " <>
+                                   fromRight (toText fp) <>
+                                   ":" <> T.pack (show ln) <>
+                                   " " <> td

@@ -49,12 +49,6 @@ handleFile file = do
       return (Todo file n v "" Nothing)
     Nothing  -> liftIO (die $ unknownProgrammingLanguage file)
 
-todoMsg :: T.Text -> Todo -> T.Text
-todoMsg msg (Todo fp ln td _ _) = "[" <> msg <> "] " <>
-                                   fromRight (toText fp) <>
-                                   ":" <> T.pack (show ln) <>
-                                   " " <> td
-
 insertTodo :: Connection -> Todo -> Shell ()
 insertTodo conn t@(Todo fp ln td _ _) = do
   let q = "INSERT INTO todos (file, line, todo, status) VALUES (?, ?, ?, ?)"

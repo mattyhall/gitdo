@@ -6,6 +6,7 @@ import Database.SQLite.Simple
 import Options.Applicative
 import Shared
 import Commit
+import Push
 
 createTable :: IO ()
 createTable = do
@@ -16,6 +17,7 @@ createTable = do
 data Command = AddHooks
              | Commit
              | Reset
+             | Push
              deriving (Show, Eq)
 
 opts :: Parser Command
@@ -31,6 +33,10 @@ opts = subparser $
   command "reset"
           (info (helper <*> pure Reset)
             (progDesc "Delete new todos"))
+  <>
+  command "push"
+          (info (helper <*> pure Push)
+            (progDesc "Create/update issues on github"))
 
 run :: Command -> IO ()
 run (AddHooks) = do
@@ -41,6 +47,7 @@ run (AddHooks) = do
   putStrLn "Created database"
 
 run (Commit) = commit
+run (Push) = push
 run (Reset) = do
   conn <- open dbPath
   execute conn "DELETE FROM todos WHERE status=?" (Only "new" :: Only String)
