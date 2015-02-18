@@ -69,6 +69,10 @@ run (AddHooks) = do
   output ".git/hooks/post-commit" "#!/bin/bash\ngitdo commit"
   shell "chmod +x .git/hooks/post-commit" empty
   putStrLn "Created post-commit hook"
+  output ".git/hooks/pre-push"
+         "#!/bin/bash\ngitdo push -i IUSER -p PSWD -u USER -r REPO"
+  shell "chmod +x .git/hooks/pre-push" empty
+  putStrLn "Created pre-push hook"
   createTable
   putStrLn "Created database"
 
