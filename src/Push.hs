@@ -55,7 +55,7 @@ syncIssue t@(Todo fp ln td _ n) = do
   json <- asValue r
   let val = json ^? responseBody
   case val ^. key "number" . asDouble of
-    Just n  -> liftIO (execute conn q ("synced" :: T.Text, n, fp, ln, td))
+    Just n  -> liftIO (execute conn q (Synced, n, fp, ln, td))
     Nothing -> liftIO $ die err
   liftIO $ TIO.putStrLn (todoMsg "SYNCED" t)
 
@@ -63,6 +63,6 @@ push :: PushOpts -> IO ()
 push cfg = do
   conn <- open dbPath
   todos <- query conn "SELECT * FROM todos WHERE status IN (?, ?)"
-                      ("new" :: T.Text, "updated" :: T.Text)
+                      (New, Updated)
   flip runReaderT (conn, cfg) $ mapM_ syncIssue todos
   putStrLn "Done"

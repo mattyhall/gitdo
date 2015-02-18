@@ -46,20 +46,20 @@ handleFile file = do
   case pat of
     Just pat -> do
       (n, v) <- matchWithLineNumber pat (input file)
-      return (Todo file n v "" Nothing)
+      return (Todo file n v None Nothing)
     Nothing  -> liftIO (die $ unknownProgrammingLanguage file)
 
 insertTodo :: Connection -> Todo -> Shell ()
 insertTodo conn t@(Todo fp ln td _ _) = do
   let q = "INSERT INTO todos (file, line, todo, status) VALUES (?, ?, ?, ?)"
   liftIO (TIO.putStrLn $ todoMsg "NEW" t)
-  liftIO $ execute conn q (fp, ln, td, "new" :: T.Text)
+  liftIO $ execute conn q (fp, ln, td, New)
 
 updateTodo :: Connection -> Todo -> Todo -> Shell ()
 updateTodo conn t@(Todo fp ln td _ _) (Todo _ _ _ status _) = do
-  let s = if status == "new"
-            then "new"
-            else "updated"
+  let s = if status == New
+            then New
+            else Updated
   let q = "UPDATE todos SET file=?, line=?, status=? WHERE todo=?"
   liftIO (TIO.putStrLn $ todoMsg "UPDATE" t)
   liftIO $ execute conn q (fp, ln, status, td)
