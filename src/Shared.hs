@@ -45,7 +45,11 @@ data Todo = Todo { _file :: FilePath
                  , _todo :: T.Text
                  , _status :: Status
                  , _number :: Maybe Int
-                 } deriving (Show, Eq)
+                 } deriving (Show)
+
+instance Eq Todo where
+  (Todo fp ln td _ _) == (Todo fp' ln' td' _ _) = fp == fp' && ln == ln'
+                                                            && td == td
 
 instance ToField FilePath where
   toField = toField . fromRight . toText

@@ -44,7 +44,11 @@ pushOpts = Push <$>
                  (  long "repo"
                  <> short 'r'
                  <> metavar "REPO"
-                 <> help "The repo to create the issues in"))
+                 <> help "The repo to create the issues in")
+           <*> switch
+                 (  long "close"
+                 <> short 'c'
+                 <> help "Close issues for todos that have been deleted"))
 
 opts :: Parser Command
 opts = subparser $

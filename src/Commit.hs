@@ -5,8 +5,9 @@ import Prelude hiding (FilePath)
 import Data.IORef
 import qualified Data.Text as T
 import qualified Data.Text.IO as TIO
-import Database.SQLite.Simple
+import Database.SQLite.Simple hiding (fold)
 import Turtle
+import qualified Control.Foldl as F
 import Shared
 
 filenamePattern :: Pattern T.Text
@@ -46,7 +47,7 @@ handleFile file = do
   case pat of
     Just pat -> do
       (n, v) <- matchWithLineNumber pat (input file)
-      return (Todo file n v None Nothing)
+      return (Todo file n (T.strip v) None Nothing)
     Nothing  -> liftIO (die $ unknownProgrammingLanguage file)
 
 insertTodo :: Connection -> Todo -> Shell ()
@@ -64,19 +65,32 @@ updateTodo conn t@(Todo fp ln td _ _) (Todo _ _ _ status _) = do
   liftIO (TIO.putStrLn $ todoMsg "UPDATE" t)
   liftIO $ execute conn q (fp, ln, status, td)
 
-updateDatabase :: Shell Todo -> Shell ()
-updateDatabase todos = do
+updateDatabase :: Connection -> Shell Todo -> Shell ()
+updateDatabase conn todos = do
   todo@(Todo fp ln td _ _) <- todos
-  conn <- liftIO $ open dbPath
-  qs <- liftIO $ query conn "SELECT * FROM todos WHERE todo=?" (Only td) :: Shell [Todo]
+  qs <- liftIO $ query conn "SELECT * FROM todos WHERE todo=?"
+          (Only td) :: Shell [Todo]
   if null qs
     then insertTodo conn todo
     else updateTodo conn todo (head qs)
 
+updateMissingTodos :: Connection -> Shell Todo -> T.Text -> Shell ()
+updateMissingTodos conn todos fp = do
+  records <- liftIO $ query conn "SELECT * FROM todos WHERE file=?" (Only fp)
+  todos' <- liftIO $ fold todos F.list
+  flip mapM_ (filter (`notElem` todos') records) $ \t@(Todo fp ln td _ _) -> do
+    liftIO (TIO.putStrLn $ todoMsg "DELETE" t)
+    liftIO $ execute conn
+                     ("UPDATE todos SET status=? WHERE" <>
+                      " file=? AND line=? AND TODO=?")
+                     (Deleted, fp, ln, td)
+
 commit :: IO ()
-commit = stdout $ do
+commit = output "/dev/null" $ do
   let files = inshell "git diff --name-only HEAD^ HEAD" empty
+  conn <- liftIO $ open dbPath
   file <- grep filenamePattern files
   let todos = handleFile (fromText file)
-  updateDatabase todos
+  updateDatabase conn todos
+  updateMissingTodos conn todos file 
   return ""
